@@ -1,0 +1,5 @@
+name = Sanas
+description = Sanas import
+package = The AIM
+version = 1.0
+core = 7.x

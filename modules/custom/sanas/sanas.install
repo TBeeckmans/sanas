@@ -1,0 +1,88 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the sanas distributors import module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function sanas_schema() {
+
+  $schema['sanas_distributor'] = array(
+    'description' => 'Stores distributors',
+    'fields' => array(
+      'did' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique distributor ID.',
+      ),
+      'vat' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The distributor vat number',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The distributor name',
+      ),
+      'street' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The distributor street',
+      ),
+      'number' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The distributor house number',
+      ),
+      'postalcode' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The distributor postal code',
+      ),
+      'city' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The distributor city',
+      ),
+      'country' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The distributor country',
+      ),
+      'phone' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'The distributor phone',
+      ),
+    ),
+    'primary key' => array('did'),
+    'unique keys' => array(
+      'vat' => array('vat'),
+    ),
+    'indexes' => array(
+      'lookup' => array('name', 'vat'),
+    ),
+  );
+
+  return $schema;
+}
