@@ -1,2 +1,52 @@
 <?php
 
+/**
+ * Implements hook_menu().
+ */
+function sanas_menu() {
+
+  $items['admin/content/distributors/import'] = array(
+    'title' => 'Sanas distributor contest',
+    'description' => 'Import sanas distributors',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sanas_distributor_import_form'),
+    'access arguments' => array('administer distributors'),
+    // TODO Change permission
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission()
+ */
+function sanas_permission() {
+  $permissions['administer distributors'] = array(
+    'title' => t('Administer distributors'),
+  );
+
+  return $permissions;
+}
+
+
+/**
+ * Implementation of hook_form().
+ *
+ * @param $form
+ * @return array
+ */
+function sanas_distributor_import_form($form) {
+
+  return $form;
+}
+
+/**
+ * Implementation of hook_form_submit().
+ *
+ * @param $form_id
+ * @param $form_state
+ */
+function sanas_distributor_import_form_submit($form_id, &$form_state) {
+
+}
