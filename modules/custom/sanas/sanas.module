@@ -217,6 +217,13 @@ function sanas_distributor_overview_form($form, &$form_state) {
   // Get the overview results
   $query = db_select('sanas_distributor', 'd');
   $query->fields('d', array('name', 'street', 'number', 'postalcode', 'city', 'country', 'vat'));
+  if (isset($form_state['search'])) {
+    $search = check_plain($form_state['search']);
+    $db_or = db_or();
+    $db_or->condition('name', '%' . $search . '%', 'LIKE');
+    $db_or->condition('vat', '%' . $search . '%', 'LIKE');
+    $query->condition($db_or);
+  }
   $distributors = $query->execute()->fetchAll(PDO::FETCH_ASSOC);
 
   // Build the form
@@ -229,9 +236,9 @@ function sanas_distributor_overview_form($form, &$form_state) {
     '#collapsed' => FALSE,
   );
 
-  $form['fieldset']['code'] = array(
+  $form['fieldset']['search'] = array(
     '#type' => 'textfield',
-    '#title' => t('Value'),
+    '#title' => t('Search criteria'),
     '#description' => t('Search on distributor name of VAT number'),
     '#default_value' => '',
     '#size' => 60,
@@ -262,5 +269,6 @@ function sanas_distributor_overview_form($form, &$form_state) {
  * @param $form_state
  */
 function sanas_distributor_overview_form_submit($form_id, &$form_state) {
-
+  $form_state['search'] = $form_state['values']['search'];
+  $form_state['rebuild'] = TRUE;
 }
