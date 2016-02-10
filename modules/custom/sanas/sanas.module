@@ -6,11 +6,20 @@
 function sanas_menu() {
 
   $items['admin/content/distributors/import'] = array(
-    'title' => 'Sanas distributor contest',
+    'title' => 'Sanas distributor import',
     'description' => 'Import sanas distributors',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sanas_distributor_import_form'),
     'access arguments' => array('administer distributors'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/content/distributors'] = array(
+    'title' => 'Sanas distributors',
+    'description' => 'Sanas distributors',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sanas_distributor_overview_form'),
+    'access arguments' => array('access distributors'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -23,6 +32,10 @@ function sanas_menu() {
 function sanas_permission() {
   $permissions['administer distributors'] = array(
     'title' => t('Administer distributors'),
+  );
+
+  $permissions['access distributors'] = array(
+    'title' => t('Access distributors'),
   );
 
   return $permissions;
@@ -80,18 +93,30 @@ function sanas_distributor_import_form_submit($form_id, &$form_state) {
       // Empty table before import
       db_truncate('sanas_distributor')->execute();
 
-      $insert = db_insert('sanas_distributor')->fields(array('vat', 'name', 'street', 'number', 'postalcode', 'city', 'country'));
+      $insert = db_insert('sanas_distributor')->fields(
+        array(
+          'vat',
+          'name',
+          'street',
+          'number',
+          'postalcode',
+          'city',
+          'country'
+        )
+      );
 
       foreach ($data as $distributor) {
-        $insert->values(array(
-          'vat' => check_plain($distributor['vat']),
-          'name' => check_plain($distributor['name']),
-          'street' => check_plain($distributor['street']),
-          'number' => check_plain($distributor['number']),
-          'postalcode' => check_plain($distributor['postalcode']),
-          'city' => check_plain($distributor['city']),
-          'country' => check_plain($distributor['country']),
-          ));
+        $insert->values(
+          array(
+            'vat' => check_plain($distributor['vat']),
+            'name' => check_plain($distributor['name']),
+            'street' => check_plain($distributor['street']),
+            'number' => check_plain($distributor['number']),
+            'postalcode' => check_plain($distributor['postalcode']),
+            'city' => check_plain($distributor['city']),
+            'country' => check_plain($distributor['country']),
+          )
+        );
       }
 
       if ($insert->execute()) {
@@ -119,7 +144,9 @@ function sanas_distributor_import_form_submit($form_id, &$form_state) {
  * @param string $length
  * @return array|bool
  */
-function _process_csv($file, $delimiter=';', $hasHeader=TRUE, $length='1000') {
+function _process_csv(
+  $file, $delimiter = ';', $hasHeader = TRUE, $length = '1000'
+) {
   $heading = NULL;
   $rows = array();
 
@@ -165,4 +192,75 @@ function _process_csv($file, $delimiter=';', $hasHeader=TRUE, $length='1000') {
   fclose($handle);
 
   return $rows;
+}
+
+
+/**
+ * Implementation of hook_form().
+ *
+ * @param $form
+ * @return array
+ */
+function sanas_distributor_overview_form($form, &$form_state) {
+  // Build the overview
+  $header = array(
+    t('Name'),
+    t('Street'),
+    t('Number'),
+    t('Postal code'),
+    t('City'),
+    t('Country'),
+    t('VAT'),
+  );
+  $distributors = array();
+
+  // Get the overview results
+  $query = db_select('sanas_distributor', 'd');
+  $query->fields('d', array('name', 'street', 'number', 'postalcode', 'city', 'country', 'vat'));
+  $distributors = $query->execute()->fetchAll(PDO::FETCH_ASSOC);
+
+  // Build the form
+  $form = array();
+
+  $form['fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Search distributor'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['fieldset']['code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Value'),
+    '#description' => t('Search on distributor name of VAT number'),
+    '#default_value' => '',
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#required' => FALSE,
+    '#weight' => 0,
+  );
+
+  $form['fieldset']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search'),
+  );
+
+  $form['overview'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $distributors,
+    '#empty' => t('No distributor(s) match your criteria'),
+  );
+
+  return $form;
+}
+
+/**
+ * Implementation of hook_form_submit().
+ *
+ * @param $form_id
+ * @param $form_state
+ */
+function sanas_distributor_overview_form_submit($form_id, &$form_state) {
+
 }
