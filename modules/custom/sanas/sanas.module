@@ -114,9 +114,9 @@ function sanas_distributor_import_form_submit($form_id, &$form_state) {
  * Parse the CSV file
  *
  * @param $file
- * @param $delimiter
- * @param int $length
- * @param bool $headers
+ * @param string $delimiter
+ * @param bool $hasHeader
+ * @param string $length
  * @return array|bool
  */
 function _process_csv($file, $delimiter=';', $hasHeader=TRUE, $length='1000') {
