@@ -35,7 +35,28 @@ function sanas_permission() {
  * @param $form
  * @return array
  */
-function sanas_distributor_import_form($form) {
+function sanas_distributor_import_form($form, &$form_state) {
+  $form = array();
+
+  $form['fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Import form'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['fieldset']['file'] = array(
+    '#type' => 'managed_file',
+    '#title' => t('CSV File'),
+    '#required' => TRUE,
+    '#upload_validators' => array('file_validate_extensions' => array('csv')),
+    '#upload_location' => 'public://distributor_import/',
+  );
+
+  $form['fieldset']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+  );
 
   return $form;
 }
@@ -47,5 +68,101 @@ function sanas_distributor_import_form($form) {
  * @param $form_state
  */
 function sanas_distributor_import_form_submit($form_id, &$form_state) {
+  // Load managed file
+  $file = file_load($form_state['values']['file']);
 
+  // Determine the real path of the managed file
+  if ($file) {
+    $file_path = drupal_realpath($file->uri);
+
+    // Process the CSV file before emptying the database
+    if ($data = _process_csv($file_path)) {
+      // Empty table before import
+      db_truncate('sanas_distributor')->execute();
+
+      $insert = db_insert('sanas_distributor')->fields(array('vat', 'name', 'street', 'number', 'postalcode', 'city', 'country'));
+
+      foreach ($data as $distributor) {
+        $insert->values(array(
+          'vat' => check_plain($distributor['vat']),
+          'name' => check_plain($distributor['name']),
+          'street' => check_plain($distributor['street']),
+          'number' => check_plain($distributor['number']),
+          'postalcode' => check_plain($distributor['postalcode']),
+          'city' => check_plain($distributor['city']),
+          'country' => check_plain($distributor['country']),
+          ));
+      }
+
+      if ($insert->execute()) {
+        drupal_set_message('The distributors have been imported', 'status');
+      }
+      else {
+        drupal_set_message('The import was unsuccessful', 'error');
+      }
+    }
+    else {
+      drupal_set_message('The uploaded file could not be opened', 'error');
+    }
+  }
+  else {
+    drupal_set_message('The uploaded file is not available', 'error');
+  }
+}
+
+/**
+ * Parse the CSV file
+ *
+ * @param $file
+ * @param $delimiter
+ * @param int $length
+ * @param bool $headers
+ * @return array|bool
+ */
+function _process_csv($file, $delimiter=';', $hasHeader=TRUE, $length='1000') {
+  $heading = NULL;
+  $rows = array();
+
+  // Detect line endings (different on OSX)
+  ini_set('auto_detect_line_endings', TRUE);
+
+  // Open the file
+  $handle = fopen($file, 'r');
+
+  if (!$handle) {
+    fclose($handle);
+    return FALSE;
+  }
+
+  // Fetch each CSV line
+  while ((($data = fgetcsv($handle, $length, $delimiter)) !== FALSE)) {
+    // The first row is a header
+    if ($hasHeader) {
+      // The header is not yet set
+      if (is_null($heading)) {
+        $heading = $data;
+      }
+      // The header is set
+      else {
+        // Fetch the line items
+        $row = array();
+        foreach ($data as $key => $value) {
+          // Use the header as key
+          $row[$heading[$key]] = $value;
+        }
+        // Add the formatted row
+        $rows[] = $row;
+      }
+    }
+    // There's no header, just fetch each line as it is
+    else {
+      foreach ($data as $key => $value) {
+        $data[$key] = $value;
+      }
+      $rows[] = $data;
+    }
+  }
+  fclose($handle);
+
+  return $rows;
 }
